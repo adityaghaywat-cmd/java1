@@ -1,0 +1,48 @@
+
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Git Clone') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/adityaghaywat-cmd/java1.git'
+            }
+        }
+
+        stage('Maven Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t adityaghaywat/java-tomcat:v1 .'
+            }
+        }
+
+        stage('Docker Login & Push') {
+            steps {
+                withDockerRegistry(credentialsId: 'docker', url: '') 
+                {
+                    sh '''
+                        
+                        docker push adityaghaywat/java-tomcat:v1
+                    '''
+                }
+            }
+        }
+
+        stage('Container') {
+            steps {
+                sh '''
+                    docker rm -f java-tomcat-v1 || true
+                    docker run -d  --name java-tomcat-v1 -p 8085:8080 adityaghaywat/java-tomcat:v1
+                '''
+            }
+        }
+    }
+}
+
